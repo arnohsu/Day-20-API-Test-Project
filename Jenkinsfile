@@ -1,52 +1,62 @@
 pipeline {
     agent any
 
+    environment {
+        VENV_DIR = "venv_jenkins"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project.git', credentialsId: 'gmail-credentials'
+                git branch: 'main', 
+                    url: 'https://github.com/arnohsu/Day-20-API-Test-Project.git',
+                    credentialsId: 'gmail-credentials'
             }
         }
 
         stage('Setup Environment') {
             steps {
-                sh '''
-                    # 建立虛擬環境（若已存在則更新套件即可）
-                    python3 -m venv venv
-                    . venv/bin/activate
+                sh """
+                    # 刪掉舊 venv_jenkins
+                    rm -rf \$VENV_DIR
 
-                    # 安裝需求套件（不升級 pip 避免 PEP 668）
+                    # 建立獨立虛擬環境
+                    python3 -m venv \$VENV_DIR
+
+                    # 啟用虛擬環境
+                    . \$VENV_DIR/bin/activate
+
+                    # 安裝專案依賴
+                    pip install --upgrade pip setuptools wheel --break-system-packages
                     pip install -r requirements.txt
-                    pip install pytest-html==4.1.1
-                '''
+                """
             }
         }
 
         stage('Run Flask in Background') {
             steps {
-                sh '''
-                    . venv/bin/activate
+                sh """
+                    . \$VENV_DIR/bin/activate
                     nohup python api.py > flask.log 2>&1 &
                     sleep 3
-                '''
+                """
             }
         }
 
         stage('Run pytest Tests') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    # 直接指定你現有的 test_api.py
-                    pytest test_api.py --junitxml=pytest-results.xml --html=reports/report.html --self-contained-html
-                '''
+                sh """
+                    . \$VENV_DIR/bin/activate
+                    pytest -v --junitxml=pytest-results.xml
+                """
             }
         }
 
         stage('Run Newman Tests') {
             steps {
-                sh '''
+                sh """
                     newman run collection.json --reporters cli,junit --reporter-junit-export newman-results.xml
-                '''
+                """
             }
         }
 
