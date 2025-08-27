@@ -4,8 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project
-'
+                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project'
             }
         }
 
