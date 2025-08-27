@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="My Collection" tests="1" time="0.042">
+  <testsuite name="New Request" id="03ad326d-17ec-4238-9b55-739b20d24a85" timestamp="2025-08-27T15:47:04.833Z" tests="0" failures="0" errors="0" time="0.042"/>
+</testsuites>
