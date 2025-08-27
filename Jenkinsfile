@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/<你的帳號>/day20_api_test.git'
+                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project'
             }
         }
 
