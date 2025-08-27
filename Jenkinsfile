@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project'
+                checkout scm
             }
         }
 
@@ -13,6 +13,7 @@ pipeline {
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
+                    pip install --upgrade pip setuptools wheel
                     pip install -r requirements.txt
                 '''
             }
@@ -22,8 +23,8 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    nohup python api.py > flask.log 2>&1 &
-                    sleep 3
+                    nohup python app.py > flask.log 2>&1 &
+                    sleep 5
                 '''
             }
         }
@@ -32,7 +33,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    pytest -v --junitxml=pytest-results.xml
+                    pytest --maxfail=1 --disable-warnings -q --junitxml=pytest-results.xml
                 '''
             }
         }
@@ -40,7 +41,7 @@ pipeline {
         stage('Run Newman Tests') {
             steps {
                 sh '''
-                    newman run collection.json --reporters cli,junit --reporter-junit-export newman-results.xml
+                    newman run collection.json -e environment.json --reporters cli,junit --reporter-junit-export newman-results.xml
                 '''
             }
         }
@@ -50,6 +51,13 @@ pipeline {
                 junit 'pytest-results.xml'
                 junit 'newman-results.xml'
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'pkill -f app.py || true'
+            archiveArtifacts artifacts: '*.xml', allowEmptyArchive: true
         }
     }
 }
