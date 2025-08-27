@@ -4,13 +4,9 @@ pipeline {
     stages {
         stage('Checkout SCM') {
             steps {
-<<<<<<< HEAD
-                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project'
-=======
                 git url: 'https://github.com/arnohsu/Day-20-API-Test-Project.git', 
                     credentialsId: 'gmail-credentials', 
                     branch: 'main'
->>>>>>> 2af92c647fa594215de44a26452748307082445c
             }
         }
 
@@ -69,3 +65,4 @@ pipeline {
         }
     }
 }
+
