@@ -1,10 +1,14 @@
 pipeline {
     agent any
 
+    environment {
+        REPORT_DIR = "reports"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project.git', credentialsId: 'gmail-credentials'
             }
         }
 
@@ -12,8 +16,9 @@ pipeline {
             steps {
                 sh '''
                     python3 -m venv venv
-                    ./venv/bin/pip install --upgrade pip setuptools wheel
-                    ./venv/bin/pip install -r requirements.txt
+                    . venv/bin/activate
+                    python -m pip install --upgrade pip setuptools wheel
+                    python -m pip install -r requirements.txt
                 '''
             }
         }
@@ -21,8 +26,8 @@ pipeline {
         stage('Run Flask in Background') {
             steps {
                 sh '''
-                    nohup ./venv/bin/python api.py > flask.log 2>&1 &
-                    sleep 5
+                    . venv/bin/activate
+                    nohup python api.py &   # 背景執行，不用 pkill
                 '''
             }
         }
@@ -30,7 +35,8 @@ pipeline {
         stage('Run pytest Tests') {
             steps {
                 sh '''
-                    ./venv/bin/pytest --junitxml=pytest-results.xml || true
+                    . venv/bin/activate
+                    pytest tests/ --junitxml=${REPORT_DIR}/results.xml --html=${REPORT_DIR}/report.html --self-contained-html
                 '''
             }
         }
@@ -38,26 +44,22 @@ pipeline {
         stage('Run Newman Tests') {
             steps {
                 sh '''
-                    newman run postman_collection.json \
-                        -e postman_environment.json \
-                        --reporters cli,junit \
-                        --reporter-junit-export newman-results.xml || true
+                    newman run postman_collection.json -r cli,html --reporter-html-export ${REPORT_DIR}/newman.html
                 '''
             }
         }
 
         stage('Collect Results') {
             steps {
-                junit 'pytest-results.xml'
-                junit 'newman-results.xml'
+                junit "${REPORT_DIR}/results.xml"
+                archiveArtifacts artifacts: "${REPORT_DIR}/*.html", fingerprint: true
             }
         }
     }
 
     post {
         always {
-            sh 'pkill -f api.py || true'
-            archiveArtifacts artifacts: '*.xml', fingerprint: true
+            echo "Pipeline finished. Flask will auto exit if nohup closes."
         }
     }
 }
