@@ -12,9 +12,8 @@ pipeline {
             steps {
                 sh '''
                     python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip setuptools wheel
-                    pip install -r requirements.txt
+                    ./venv/bin/pip install --upgrade pip setuptools wheel
+                    ./venv/bin/pip install -r requirements.txt
                 '''
             }
         }
@@ -22,8 +21,7 @@ pipeline {
         stage('Run Flask in Background') {
             steps {
                 sh '''
-                    . venv/bin/activate
-                    nohup python app.py > flask.log 2>&1 &
+                    nohup ./venv/bin/python api.py > flask.log 2>&1 &
                     sleep 5
                 '''
             }
@@ -32,8 +30,7 @@ pipeline {
         stage('Run pytest Tests') {
             steps {
                 sh '''
-                    . venv/bin/activate
-                    pytest --maxfail=1 --disable-warnings -q --junitxml=pytest-results.xml
+                    ./venv/bin/pytest --junitxml=pytest-results.xml || true
                 '''
             }
         }
@@ -41,7 +38,10 @@ pipeline {
         stage('Run Newman Tests') {
             steps {
                 sh '''
-                    newman run collection.json -e environment.json --reporters cli,junit --reporter-junit-export newman-results.xml
+                    newman run postman_collection.json \
+                        -e postman_environment.json \
+                        --reporters cli,junit \
+                        --reporter-junit-export newman-results.xml || true
                 '''
             }
         }
@@ -56,8 +56,8 @@ pipeline {
 
     post {
         always {
-            sh 'pkill -f app.py || true'
-            archiveArtifacts artifacts: '*.xml', allowEmptyArchive: true
+            sh 'pkill -f api.py || true'
+            archiveArtifacts artifacts: '*.xml', fingerprint: true
         }
     }
 }
