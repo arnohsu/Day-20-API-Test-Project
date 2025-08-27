@@ -4,16 +4,18 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project.git'
+                git branch: 'main', url: 'https://github.com/arnohsu/Day-20-API-Test-Project.git', credentialsId: 'gmail-credentials'
             }
         }
 
         stage('Setup Environment') {
             steps {
                 sh '''
+                    # 建立虛擬環境（若已存在則更新套件即可）
                     python3 -m venv venv
                     . venv/bin/activate
-                    pip install --upgrade pip
+
+                    # 安裝需求套件（不升級 pip 避免 PEP 668）
                     pip install -r requirements.txt
                     pip install pytest-html==4.1.1
                 '''
@@ -34,8 +36,8 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    # 直接抓目前目錄下的 test_*.py 檔案，不用 tests/ 資料夾
-                    pytest test_api.py --junitxml=pytest-results.xml --html=pytest-report.html --self-contained-html
+                    # 直接指定你現有的 test_api.py
+                    pytest test_api.py --junitxml=pytest-results.xml --html=reports/report.html --self-contained-html
                 '''
             }
         }
